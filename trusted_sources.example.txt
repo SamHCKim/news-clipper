@@ -1,0 +1,26 @@
+# Trusted news source whitelist — one per line.
+# Match is a case-insensitive substring against the article's "source" name
+# (as Google News labels it) and against the article URL. Comment lines start with #.
+#
+# Copy to trusted_sources.txt and edit. Pass with: --trusted-sources trusted_sources.txt
+
+# Korean — economy / business
+조선일보
+중앙일보
+동아일보
+한국경제
+매일경제
+서울경제
+이데일리
+연합뉴스
+연합인포맥스
+파이낸셜뉴스
+머니투데이
+
+# International — finance / M&A
+Reuters
+Bloomberg
+Financial Times
+Wall Street Journal
+The Economist
+CNBC

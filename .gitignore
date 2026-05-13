@@ -1,0 +1,30 @@
+# Secrets / credentials — NEVER commit
+.env
+*.env
+credentials.json
+service_account.json
+google-credentials*.json
+
+# Output files
+*.xlsx
+*.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# User-specific whitelist (keep example only)
+trusted_sources.txt
+
+# OMC internal state
+.omc/
