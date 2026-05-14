@@ -38,18 +38,14 @@ streamlit run app.py
 
 ### 기본 검색어/언론사 사전 설정
 
-`defaults/` 폴더에 텍스트 파일 두 개를 만들면 앱 실행 시 입력창이
-자동으로 채워집니다. 예시 파일을 복사해서 본인 값으로 편집하세요:
-
-```powershell
-Copy-Item defaults/queries.txt.example defaults/queries.txt
-Copy-Item defaults/trusted.txt.example defaults/trusted.txt
-```
+`defaults/` 폴더의 두 파일을 직접 편집하면 앱 실행 시 입력창이 자동으로 채워집니다.
 
 - `defaults/queries.txt` — 한 줄에 1쿼리, 최대 7줄
 - `defaults/trusted.txt` — 한 줄에 언론사 이름 1개
 
-파일이 없으면 빈 입력창에 placeholder만 표시됩니다.
+파일이 없거나 비어 있으면 빈 입력창에 placeholder만 표시됩니다. fork
+직후 깨끗한 출발점이 필요하면 같은 폴더의 `*.example` 파일을 참고하거나
+`Copy-Item`으로 덮어쓰세요.
 
 ## CLI 사용법
 
@@ -92,9 +88,13 @@ Google 검색 연산자가 그대로 통과됩니다.
 
 ## 출력 컬럼
 
-| 매칭 키워드 | 제목 | 링크 | 언론사 | 발행일시 |
-|------------|------|------|--------|----------|
-| `M&A, 인수` | "..." | https://... | 한국경제 | Mon, 12 May 2025 ... |
+Web UI (멀티 쿼리, `app.py`):
+
+| 검색 쿼리 | 매칭 키워드 | 제목 | 링크 | 언론사 | 발행일시 |
+|----------|------------|------|------|--------|----------|
+| `M&A OR 인수` | `M&A, 인수` | "..." | https://... | 한국경제 | Mon, 12 May 2025 ... |
+
+CLI (단일 쿼리, `news.py`) — "검색 쿼리" 컬럼 없이 5개 컬럼.
 
 기사 언어는 보존됩니다(한국어 기사는 한국어, 영어 기사는 영어).
 
@@ -127,8 +127,10 @@ schtasks /Create /SC DAILY /TN "NewsClipperMnA" /ST 08:00 `
 
 ## 보안
 
-- `.env`, 서비스 계정 JSON, `trusted_sources.txt`, `*.xlsx`는 `.gitignore`로 제외됨
+- `.env`, 서비스 계정 JSON, `trusted_sources.txt`(CLI 화이트리스트), `*.xlsx`는 `.gitignore`로 제외됨
 - 자격증명을 절대 repo에 커밋하지 말 것
+- `defaults/queries.txt`, `defaults/trusted.txt`는 기본적으로 commit됩니다.
+  본인 설정을 비공개로 두려면 두 파일을 `.gitignore`에 추가하세요.
 
 ## 로드맵 (Phase 2+)
 
