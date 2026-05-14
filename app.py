@@ -9,6 +9,7 @@ from __future__ import annotations
 import io
 import re
 from datetime import datetime
+from pathlib import Path
 
 import streamlit as st
 
@@ -185,6 +186,27 @@ def default_filename() -> str:
     return f"News Clipping_{datetime.now().strftime('%y%m%d')}.xlsx"
 
 
+_APP_DIR = Path(__file__).parent
+_DEFAULTS_DIR = _APP_DIR / "defaults"
+
+
+def _load_default(filename: str) -> str:
+    """Read defaults/<filename> if present, else return ''. Used to pre-fill
+    the search inputs on first load. The user can edit `defaults/queries.txt`
+    and `defaults/trusted.txt` (both gitignored) for personal presets."""
+    p = _DEFAULTS_DIR / filename
+    if p.is_file():
+        try:
+            return p.read_text(encoding="utf-8").strip("\n")
+        except OSError:
+            return ""
+    return ""
+
+
+st.session_state.setdefault("queries_text", _load_default("queries.txt"))
+st.session_state.setdefault("trusted_text", _load_default("trusted.txt"))
+
+
 # ---------------------------------------------------------------------------
 # Header
 # ---------------------------------------------------------------------------
@@ -231,6 +253,17 @@ with st.container(border=True):
             height=120,
             key="trusted_text",
         )
+
+        with st.expander("📖 Google 검색 연산자 가이드", expanded=False):
+            st.markdown("""
+| 문법 | 설명 | 예시 |
+|------|------|------|
+| `A OR B` | 둘 중 하나라도 포함 | `M&A OR 인수 OR 합병` |
+| `"구문"` | 정확한 구문 일치 | `"적대적 인수합병"` |
+| `(A OR B) C` | 그룹 + AND | `(M&A OR 합병) 삼성` |
+| `-단어` | 특정 단어 제외 | `인수 -주식` |
+| `site:도메인` | 특정 사이트만 | `site:reuters.com merger` |
+          """)
 
         submitted = st.form_submit_button("🔍 검색", use_container_width=True)
 
@@ -279,24 +312,35 @@ if submitted:
                 unsafe_allow_html=True,
             )
 
+            visible_cols = st.multiselect(
+                "표시할 컬럼",
+                options=COLUMNS_MULTI,
+                default=COLUMNS_MULTI,
+                key="visible_cols",
+            )
+            if not visible_cols:
+                st.info("컬럼을 1개 이상 선택해 주세요. 지금은 전체 컬럼을 표시합니다.")
+                visible_cols = COLUMNS_MULTI
+
             preview_rows = rows_for_multi(items)
             data = {col: [r[i] for r in preview_rows] for i, col in enumerate(COLUMNS_MULTI)}
+            data = {col: data[col] for col in visible_cols}
+
+            column_config_filtered = {k: v for k, v in {
+                "검색 쿼리": st.column_config.TextColumn("검색 쿼리", width="medium"),
+                "매칭 키워드": st.column_config.TextColumn("매칭 키워드", width="small"),
+                "제목": st.column_config.TextColumn("제목", width="large"),
+                "링크": st.column_config.LinkColumn("링크", display_text="🔗 열기", width="small"),
+                "언론사": st.column_config.TextColumn("언론사", width="small"),
+                "발행일시": st.column_config.TextColumn("발행일시", width="medium"),
+            }.items() if k in visible_cols}
 
             st.dataframe(
                 data,
                 use_container_width=True,
                 height=420,
                 hide_index=True,
-                column_config={
-                    "검색 쿼리": st.column_config.TextColumn("검색 쿼리", width="medium"),
-                    "매칭 키워드": st.column_config.TextColumn("매칭 키워드", width="small"),
-                    "제목": st.column_config.TextColumn("제목", width="large"),
-                    "링크": st.column_config.LinkColumn(
-                        "링크", display_text="🔗 열기", width="small"
-                    ),
-                    "언론사": st.column_config.TextColumn("언론사", width="small"),
-                    "발행일시": st.column_config.TextColumn("발행일시", width="medium"),
-                },
+                column_config=column_config_filtered,
             )
 
             buf = io.BytesIO()

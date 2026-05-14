@@ -4,6 +4,7 @@ and the Streamlit UI (app.py). No console I/O or argparse here.
 
 from __future__ import annotations
 
+import difflib
 import re
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -22,6 +23,8 @@ LOCALES = [
 
 COLUMNS = ["매칭 키워드", "제목", "링크", "언론사", "발행일시"]
 COLUMNS_MULTI = ["검색 쿼리", "매칭 키워드", "제목", "링크", "언론사", "발행일시"]
+FUZZY_TITLE_THRESHOLD = 0.85
+MIN_TITLE_LEN_FUZZY = 10
 
 _OPERATOR_TOKENS = {"AND", "OR", "NOT"}
 
@@ -216,9 +219,18 @@ def fetch_for_queries(
 
 
 def dedupe_multi(items: list[dict]) -> list[dict]:
-    """Dedup by normalized URL. When duplicates collide, accumulate the set of
-    originating queries and the union of matched keywords.
+    """Dedup by normalized URL (exact) then by fuzzy title similarity.
+
+    Pass 1 — exact key dedup: group by norm_link (or title as fallback),
+    accumulating matched_queries across duplicates.
+
+    Pass 2 — fuzzy title dedup: for every pair of surviving items whose titles
+    are both at least MIN_TITLE_LEN_FUZZY characters, compute
+    SequenceMatcher ratio; if >= FUZZY_TITLE_THRESHOLD treat them as the same
+    article, keep the first-seen item, and union the matched_queries sets.
+    O(n²) — acceptable for the typical ≤700-item result set.
     """
+    # --- Pass 1: exact key dedup ---
     seen: dict[str, dict] = {}
     for it in items:
         key = it.get("norm_link") or it.get("title")
@@ -232,7 +244,27 @@ def dedupe_multi(items: list[dict]) -> list[dict]:
             mq = it.get("matched_query")
             if mq:
                 seen[key]["matched_queries"].add(mq)
-    return list(seen.values())
+    unique = list(seen.values())
+
+    # --- Pass 2: fuzzy title dedup ---
+    kept: list[dict] = []
+    for candidate in unique:
+        t_cand = (candidate.get("title") or "").strip()
+        merged = False
+        if len(t_cand) >= MIN_TITLE_LEN_FUZZY:
+            for existing in kept:
+                t_exist = (existing.get("title") or "").strip()
+                if len(t_exist) >= MIN_TITLE_LEN_FUZZY:
+                    sm = difflib.SequenceMatcher(None, t_exist, t_cand)
+                    if sm.quick_ratio() < FUZZY_TITLE_THRESHOLD:
+                        continue
+                    if sm.ratio() >= FUZZY_TITLE_THRESHOLD:
+                        existing["matched_queries"] |= candidate.get("matched_queries", set())
+                        merged = True
+                        break
+        if not merged:
+            kept.append(candidate)
+    return kept
 
 
 def rows_for_multi(items: list[dict]) -> list[list[str]]:

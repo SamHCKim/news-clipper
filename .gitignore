@@ -26,5 +26,9 @@ Thumbs.db
 # User-specific whitelist (keep example only)
 trusted_sources.txt
 
+# Personal defaults for the Streamlit UI (keep .example files only)
+defaults/queries.txt
+defaults/trusted.txt
+
 # OMC internal state
 .omc/
