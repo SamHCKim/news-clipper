@@ -29,9 +29,27 @@ streamlit run app.py
 - **지난 N일**: 1~90일 범위
 - **파일명**: 기본 `News Clipping_yymmdd.xlsx`, 수정 가능
 - **신뢰 언론사**: 줄 단위 입력 (선택)
+- **📖 Google 검색 연산자 가이드**: 입력 폼 안에서 접고 펴는 가이드
+- **표시할 컬럼**: 결과 테이블 위 멀티셀렉트로 컬럼 토글
 
 "🔍 검색" 클릭 → 결과 테이블에서 링크 클릭 가능 → "📥 다운로드"로 xlsx 저장.
-출력 컬럼: `검색 쿼리 | 매칭 키워드 | 제목 | 링크 | 언론사 | 발행일시` (URL 기준 dedup).
+출력 컬럼: `검색 쿼리 | 매칭 키워드 | 제목 | 링크 | 언론사 | 발행일시`.
+중복 제거: URL 정규화 + 제목 유사도(≥0.85) 기준.
+
+### 기본 검색어/언론사 사전 설정
+
+`defaults/` 폴더에 텍스트 파일 두 개를 만들면 앱 실행 시 입력창이
+자동으로 채워집니다. 예시 파일을 복사해서 본인 값으로 편집하세요:
+
+```powershell
+Copy-Item defaults/queries.txt.example defaults/queries.txt
+Copy-Item defaults/trusted.txt.example defaults/trusted.txt
+```
+
+- `defaults/queries.txt` — 한 줄에 1쿼리, 최대 7줄
+- `defaults/trusted.txt` — 한 줄에 언론사 이름 1개
+
+파일이 없으면 빈 입력창에 placeholder만 표시됩니다.
 
 ## CLI 사용법
 
@@ -116,5 +134,4 @@ schtasks /Create /SC DAILY /TN "NewsClipperMnA" /ST 08:00 `
 
 - 추가 RSS 소스 결합 (네이버, 다음, 산업별 전문지)
 - LLM 기반 주제 적합성 스코어링
-- 제목 fuzzy match 중복 제거
-- 웹 UI / 대시보드
+- 발행일시 ISO 파싱 및 정렬
