@@ -1,5 +1,7 @@
 # News Clipper
 
+> 🌐 **Live demo**: <https://news-clipper-mna.streamlit.app/> — 설치 없이 브라우저(데스크탑/모바일)에서 바로 사용 가능.
+
 키워드 기반(Google 검색 연산자 지원) 뉴스 수집 → 스프레드시트 저장 도구.
 Google News RSS로 한국어·영어 뉴스를 함께 가져오고, 기간 필터와 신뢰 언론사
 화이트리스트를 적용한 뒤 `.xlsx` 또는 Google Sheets에 정리합니다.
